@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<!--
+COLDLOGIC CONFIDENTIAL UNTIL DETERMINED OTHERWISE
+-->
+	<html lang="en">	
+	<head>
+		<title>Markdown-to-HTML Sample</title>
+		<!-- link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/ -->
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"></script>
+                <script src='book.js' ></script>
+	</head>
+	<body style="margin: 10px">
+		<div data-markdown>
+#Hello
+
+sdf
+
+sdf asdf asdf sdf
+
+
+	var x=1;
+	entry.forEach(function(item){
+		x=x++;
+	})
+
+
+## sdfsdfdf
+
+		</div>
+
+		<hr/>
+		<h2>This is regular HTML</h2>
+		<hr/>
+
+		<div data-markdown>
+#Hello
+
+sdf
+
+sdf asdf asdf sdf
+
+
+	var x=1;
+	entry.forEach(function(item){
+		x=x++;
+	})
+
+
+## sdfsdfdf
+		</div>
+                <div data-markdown>
+                    # The On-Demand Business
+_How Apps For Work revolutionize Physical Product Development_
+
+***
+
+![lets get in a consultant](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvCcOGX5zd3jEq-FSpd-6ZMWZenYJxTzveVKbnCzdnAH-nco3ktw)
+
+## Start Here; Read This First
+> The point of this section is to address Kirby's issue that there are many different audiences interest in different aspects of what we are doing and don't care about other aspects. So this section is to steer them as fast as possible to the right part of the book, rather than have them read it as a novel, and get disinterested. The web page version uses links; the physical needs some other clear mechanism. (page references, and other ways of making it easy to find. Big Pictures, Big Titles, page colors, Tabs ...), and the links we have should be automatically translated into the content (each page numbers) for the physical book. It is really important that once we have triggered someone into opening the book, that they find what triggered them easily, and find that it is consistent with what triggered them.
+
+> My goal is that this page is best one-page version of the whole story that we can write. And it links to the chapters, for more detail, and that each chapter starts with the best one page version of that chapter, with links the content of the chapter for detail. And the each detail page links back to big picture pages for someone who dips into the book and finds the content without a context.
+
+## How do you take your book?
+This is an On Demand Business book so we intend to deliver What you want, How you Want it, When you want it.
+
+You can read the book from beginning to the end following to prev/next links a the bottom of the page in the online version, wipe the page on your e-book, or use a manual page turner for the dead tree edition.
+
+Or you can follow the links [page references] so that you can quickly get to the bits that interest you. If you are a link follower, you might find the on-line version easier. 
+It is at [http://apps4work.info](https://github.com/apps4work/co.a4w/wiki). FIXME MAKE SURE THAT THE PRINTED URL ADDRESS IS CORRECT IN THE BOOK AND WORKS !! 
+
+If you get the wikipedia-problem, come back and read it in the sequence we hope makes most sense. You can see that [here](Contents). 
+
+Or you can take it [a la carte](index).
+
+### [The Problem](Chapter-1-The-Problem)
+
+We had a problem with automating manufacturing. Even though we used the best tools in the industry, it was nearly impossible to get them to do the automated manufacturing we wanted. 
+We discovered this was not because the tools weren't suitable for their customers' business but that we are in a different business.
+
+We are in the On-Demand Business - high-volume unique products, and not the long run business of high volumes of identical products - and the On-Demand Business demands a degree of automation that isn't necessary or affordable in the long run business. But not only does the on-demand business demand the automation, the automation of manufacturing requires the value that On-Demand Business brings to justify economically the cost the automation.
+
+Our problem is how to get the existing industry to grasp the On-Demand Business opportunity and to retool to be able to take advantage of it
+
+
+### [The Solution](Chapter-2-The-Solution)
+
+The solution we choose is an open competitive Marketplace for tools in contrast to the current closed limited marketplace for tools, which cannot keep up with the technology advancement, cannot embrace and exploit the power of algorithm writers nor support the needs of the  with the algorithm writers, or for them to prosper.
+
+This creates a dilemma for the incumbent tool providers. They can ignore the On-Demand Business, they do economically unjustifiable automation for the long run business, they can hope to stem the wave of algorithms or they can lead the way into it, or just come along for the ride. Our solution gives them the best chance to not being left behind.
+
+We show how existing software technology can be used to the benefit of both the existing tool providers and new algorithm providers, to the benefits of product developers and manufacturers and retailers, and ultimately to the benefit of the consumer.
+
+### [The Project](Chapter-3-The-Project)
+
+
+
+The Project is the means by which we can bring this to fruition. At its core it depends on the network effect, and in particular the benefits that algorithm providers can bring to the product Brands who are the data providers and data consumers. Making data available for algorithm writers to experiment with to develop successful algorithms and to prove them, is the best way for data providers and consumers to have better products. 
+
+### Technical Details
+
+The technical details involve a relatively simple programming interface in a singular programming environment (JVM/WAS) that abstracts away the problem of where the data is coming from and the formatting of that data at the primitive level. it is a programming interface that speaks the same data structures as are in a JSON string.
+
+It is a programming interface, and not a file format, because the problem is programs talking to programs, and the solution to problems, including those inherent in Data File formats, is programs talking programs.
+But the program can be manifested as file which makes did easy for people and systems to evolve from current practice to the future systems. 
+
+Our system is essentially the wrapping of data sources in an abstraction analogous to JSON, which is a sufficiently comprehensive data structure to handle any current or future data format. 
+
+Our solution is not Magic. It does not instantly make any program be able to speak to any other program.  
+In particular programs can only work on data for which they understand  the semantics. Not just the values of primitives but the schema in which primitives are compounded into higher sematic objects.
+This schema problem is potentially an infinite problem, since there is always more semantics that could be understood. 
+
+Our solution breaks down the infinite schema problem into a series of finite schema problems starting at the most primitive JSON data types, through to any level of high semantics in the form of what we call typed JSON, which means schema names at any level of the hierarchy within the JSON.  It breaks down the infinite problem into a series of finite problems that we can be solved independently by interested participants, and where conflicts exist it can be solved in the only way that computers can solve complex which is with a program to translate one to the other.
+
+We chose infrastructure so that putting together these various programs that achieve schema transforms and algorithmic results can be made as simple as I've got an app for it.
+The same core technology that runs apps on Android is used to run Apps for Work. The difference is that Apps For Work primarily run on a work computers/servers with an interface to a human, when necessary, using is a browser. 
+
+In the same way that having Apps work on the phone was not an accident but requires the design of some rules to make it work, we propose rules to make Apps for Work work. There is no huge invention: little more than drawing the lines on a existing road to establish Lanes so that they can be used efficiently and effectively and avoid head-on collisions.  The technology demands that the Apps for Work makes would be very challenging but it's all been done, and is supported by major software organizations; it is battle-tested over the last 20 years, and, if it matters, it is available in versions that are free and open source.
+
+We have a new way for software, specifically for algorithms that add value to physical products specifications, to appropriate value  for their software, and for that software and other products in the supply-chain traditionally hidden from the consumer, to enter a vigorous, value-based, consumer-centric marketplace.
+
+We explain [the Part Interface](Chapter-x-The-Part-Interface) and [Apps For Work](Chapter-x-Apps-For-Work) in simple language for you to explain to your boss, and in the details you need to evaluate it and even write code.
+
+
+
+### [The Garment Industry](Chapter-4-Apps-For-Work-in-the-Garment-Industry)
+Our initial focus is the [Garment Industry](The-Garment-Industry), since we built our own [On Demand Garment Manufacturing Factory](Chapter-5-The-OnPointManufacturing-Factory), but we have good reason to believe both that it's a good place to start and that the problems and solutions we discuss are applicable to wider industries, and to the physical product development and manufacturing industries in general.
+
+## Conclusion
+This is an opportunity for product developers and for those who provide the tools for product developers and for software creators. It is an opportunity that is well suited to the state of the technology and to the desires of the consumers. It is an opportunity just begging to be taken.
+
+We describe how early adopters are making contributions to the creation of the network effect, be they data providers, tool providers, or algorithm providers. This is a value-feedback loop among those players, but also one that will offer significant first-mover advantages.
+
+There are the opportunities for software, for a [better utilization software talent](Utilization-of-Programming-Talent), and better way for [software to make money](Getting-Paid-for-Software), have no specific dependence on the Garment industry, since [the Part Interface](Chapter-x-The-Part-Interface) and [Apps For Work](Chapter-x-Apps-For-Work) do not. There are many opportunities for software to get a leg up that are 
+[Garment specific](How-to-write-Software-To-Design-Clothes-in-3D), 
+or [general purpose](The-Project), 
+into open physical product development where the generality of the Part Interface will returns on investment across all industries.
+
+
+
+ 
+
+
+
+
+
+## The Style of This Book
+![The style of this book](http://stayviolation.typepad.com/.a/6a00d834515bc269e20133f48f98a4970b-pi)
+
+***
+![dave and kirby](http://news.blr.com/app/uploads/sites/3/2011/08/Dilbert1.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+***
+[Prev: none] \| Home \| [Next: Chapter-1-The-Problem](Chapter-1-The-Problem)  
+Referenced by  [Contents](Contents) | [index](index)  
+
+
+                </div>
+
+	
+		<script type="text/javascript">
+			window.onload=function(){
+				// this function is the reverse version of escapeHTML found at 
+				// https://github.com/evilstreak/markdown-js/blob/master/src/render_tree.js
+				function unescapeHTML( text ) {
+				    return text.replace( /&amp;/g, "&" )
+				               .replace( /&lt;/g, "<" )
+				               .replace( /&gt;/g, ">" )
+				               .replace( /&quot;/g, "\"" )
+				               .replace( /&#39;/g, "'" );
+				  }
+
+				// based on https://gist.github.com/paulirish/1343518
+				(function(){
+					[].forEach.call( document.querySelectorAll('[data-markdown]'), function fn(elem){
+						elem.innerHTML = (new Showdown.converter()).makeHtml(unescapeHTML(elem.innerHTML));
+					});
+				}());
+                                
+                                doBookStuff();
+			}
+		</script>
+	</body>
+</html>                                		

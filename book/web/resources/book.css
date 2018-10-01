@@ -1,0 +1,98 @@
+/*
+COLDLOGIC CONFIDENTIAL UNTIL DETERMINED OTHERWISE
+*/
+/* 
+    Created on : Sep 30, 2018, 2:39:45 PM
+    Author     : root
+*/
+
+body {
+     margin:0px;
+    padding:0px;
+     width:100vw;
+    height:100vh;
+    overflow:hidden;
+}
+
+table.singlepage , tbody {
+    width:100%;
+    height:100%;
+    margin:0px;
+    padding:0px;
+}
+
+tr {
+   padding:0px;
+   margin:0px;
+}
+
+td {
+    vertical-align: top;
+   
+}
+td.contents {
+    font-size:75%;
+    width:20vw;
+    background:beige;
+}
+td.page {
+    padding:0px;
+    border:thin black solid;
+    width: 60em;
+} 
+div.page, div.contents, div.sidebar {
+    height:100vh;
+    overflow-y: auto;        
+}
+div.page {
+     
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+    font-size: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+img { 
+    min-width: 30em;
+    max-width: 60em; 
+    display: block; 
+}
+
+.editlinks{float:right}
+.editlink{font-size:100%}
+
+blockquote {background:lightgray}
+
+
+.sidebar {
+    background:beige;
+    height:100vh;
+}
+
+.currentPage {
+    background:yellow;
+}
+
+.currentChapter {
+    background:#cafa5e;
+}
+
+/* unvisited link */
+a:link {
+    color: green;
+}
+
+/* visited link */
+a:visited {
+    color: blue;
+}
+
+/* mouse over link */
+a:hover {
+    color: hotpink;
+}
+
+/* selected link */
+a:active {
+    color: blue;
+}
