@@ -1,4 +1,5 @@
 
+<%@page import="com.coldlogic.markdown.Markdown"%>
 <%@page import="java.util.StringTokenizer"%>
 <%
 // COLDLOGIC CONFIDENTIAL UNTIL DETERMINED OTHERWISE
@@ -11,18 +12,29 @@
     String clean(String filename) {
         return filename.replace("-", " ");
     }
+    static String chap = "Chapter-x-";
+
+    String chapter_name(int number, String filename) {
+        if (number<1)
+           return "";
+
+        if (filename.startsWith("Chapter")) {
+            filename = filename.substring(chap.length());
+        }
+        return number + ". " + filename.replace("-", " ");
+    }
 
     String link(String filename) {
-        return "<a href='" + filename + "' >" + clean(filename) + "</a>";
+        return link(clean(filename), filename);
     }
 
-    String source(String pageName) throws Exception {
-        String source = "https://raw.githubusercontent.com/wiki/apps4work/co.a4w/" + pageName + ".md";
+    String link(String callout, String filename) {
+        return "<a href='" + filename + "' >" + callout + "</a>";
+    }
+
+    String source(String pageFileName) throws Exception {
+        String source = "https://raw.githubusercontent.com/wiki/apps4work/co.a4w/" + pageFileName + ".md";
         return com.dotcomfast.net.LinkAccessor.get(source);
-    }
-
-    void outPage(Common cm, String pageName) throws Exception {
-        cm.out(com.coldlogic.markdown.Markdown.html(source(pageName)));
     }
 
     class Contents {
@@ -30,33 +42,49 @@
         String prev;
         String next;
         String chapter;
+        String chapter_name = "";
+        String page_name = "";
+        int chapter_number;
+        boolean is_chapter = false;
 
         String contents(String current) throws Exception {
             StringBuilder b = new StringBuilder();
             StringTokenizer sequence = new StringTokenizer(source("_sequence"), "\n");
             b.append("<ol>\n");
-            String running_prev = null;
-            String running_chapter = null;
+            String running_prev = "Home";
+            String running_chapter = running_prev;
+            int running_chapter_number = 0;
 
             while (sequence.hasMoreTokens()) {
                 String line = sequence.nextToken();
 
                 if (line.length() > 0) {
+
+                    if (line.contains("Chapter")) {
+                        running_chapter = line;
+                        running_chapter_number++;
+
+                        b.append("</ol>\n");
+                        b.append(link(chapter_name(running_chapter_number, running_chapter), line));
+                        b.append("<ol id='" + line + "' >\n");
+                    } else {
+                        b.append("<li id='" + line + "' >\n").append(link(line)).append("</li>\n");
+                    }
+
                     if (current.equals(line)) {
                         prev = running_prev;
+
                         chapter = running_chapter;
+                        chapter_number = running_chapter_number;
+                        chapter_name = chapter_name(chapter_number, chapter);
+
+                        is_chapter = current.equals(chapter);
+                        page_name=is_chapter ? chapter_name : clean(current);
+
                     } else {
                         if (prev != null && next == null) {
                             next = line;
                         }
-                    }
-                    if (line.contains("Chapter")) {
-                        running_chapter = line;
-                        b.append("</ol>\n");
-                        b.append(link(line));
-                        b.append("<ol id='" + line + "' >\n");
-                    } else {
-                        b.append("<li id='" + line + "' >\n").append(link(line)).append("</li>\n");
                     }
                     running_prev = line;
                 }
@@ -75,6 +103,7 @@
         <!-- link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/ -->
         <link rel="stylesheet" type="text/css" href="/book/resources/book.css"/>
         <!-- script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"></script -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src='/book/resources/book.js' ></script>
         <script src='/book/resources/rbt.js' ></script>
 
@@ -98,13 +127,13 @@
 
                 if (auth == null || auth.authorized()) {
                     String pathInfo = request.getPathInfo();
-                    String pageName = pathInfo.substring(pathInfo.indexOf("/") + 1); // remove slash
+                    String pageFileName = pathInfo.substring(pathInfo.indexOf("/") + 1); // remove slash
 
                     if (pathInfo == null || pathInfo.length() == 0 || pathInfo.equals("/")) {
                         cm.out("<script>\ndocument.location='Home';\n</script>\nGoing Home ..");
                     } else if (pathInfo.startsWith("/images")) {
                         response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
-                        response.setHeader("Location", "https://raw.githubusercontent.com/wiki/apps4work/co.a4w/" + pageName);
+                        response.setHeader("Location", "https://raw.githubusercontent.com/wiki/apps4work/co.a4w/" + pageFileName);
                         return;
                     } else {
 
@@ -116,33 +145,40 @@
                                 + " >");
                         //outPage(cm,"Contents");
                         Contents contents = new Contents();
-                        cm.out(contents.contents(pageName));
+                        cm.out(contents.contents(pageFileName));
                         cm.out("</div></td>\n"
                                 + "<td class='page'>\n"
                                 + "<div class='page'>");
-                        cm.out("<span class='editlinks'>"
-                                + " <a class='editlink' href='https://github.com/apps4work/co.a4w/wiki/" + pageName + "/_edit' target='" + pageName + "' >Edit</a>"
+                        cm.out("<span class='chapter_name'>"
+                                + (contents.is_chapter?"":contents.chapter_name)
+                                + "</span>"
+                                + "<span class='editlinks'>"
+                                + " <a href='#' onclick='book_toggle_links();return false;' >links</a>"
+                                + " <a class='editlink' href='https://github.com/apps4work/co.a4w/wiki/" + pageFileName + "/_edit' target='" + pageFileName + "' >Edit</a>"
                                 + " <a class='editlink' href='" + contents.prev + "' >prev</a>"
                                 + " <a class='editlink' href='" + contents.next + "' >next</a>"
                                 + "</span>"
                         );
-                        cm.out("<h1>" + clean(pageName)
+                        cm.out("<h1>" + contents.page_name
                                 + "</h1>\n");
-                        try{
-                            outPage(cm, pageName);
-                         } catch (Throwable e) {
-                             cm.out(cm.exception(e).replace("</table>",""));
-                         }
+                        Markdown markdown = null;
+                        try {
+                            markdown = new Markdown(source(pageFileName));
+                            cm.out(markdown.html());
+
+                        } catch (Throwable e) {
+                            cm.out(cm.exception(e).replace("</table>", ""));
+                        }
                         cm.out("</div>"
                                 + "</td>"
                                 + "<td class='sidebar'>"
                                 + "<div class='contents'>"
-                                + "sidebar"
+                                + (markdown == null ? "" : markdown.sidebar())
                                 + "</div></td>"
                                 + "</tr></table>\n");
 
                         cm.out("<script>\n"
-                                + "    setBookClass('" + pageName + "','currentPage');\n "
+                                + "    setBookClass('" + pageFileName + "','currentPage');\n "
                                 + "    setBookClass('" + contents.chapter + "','currentChapter');\n "
                                 + "  </script>\n");
 

@@ -45,4 +45,9 @@ import * as showdown from './showdown.js';
         var e = document.getElementById(id);
         e.className=classname;
     }
+    
+    function book_toggle_links() {
+        $("a").addClass("highlighted_link");
+        return false;
+    }
 

@@ -42,10 +42,11 @@ td.page {
 } 
 div.page, div.contents, div.sidebar {
     height:100vh;
-    overflow-y: auto;        
+    overflow-y: scroll;        
 }
 div.page {
-     
+    margin-left: 10px;
+    margin-right: 10px;
     font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
     font-size: 16px;
     line-height: 1.5;
@@ -54,15 +55,38 @@ div.page {
 
 img { 
     min-width: 30em;
-    max-width: 60em; 
+    max-width: 55em; 
     display: block; 
+       
+    margin-left: auto;
+    margin-right: auto;
 }
 
+.sidebar img { 
+    min-width: 30em;
+    max-width: 30em; 
+    display: block; 
+       
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sidebar blockquote {font-style: italic}
 .editlinks{float:right}
 .editlink{font-size:100%}
 
 blockquote {background:lightgray}
 
+.comment  {background:grey; 
+           color:white;
+          display: block;
+          font-size: smaller;
+          border: thin white solid;
+}
+
+.comment::before {
+  content: "Authors note (not for publication):";
+}
 
 .sidebar {
     background:beige;
@@ -79,7 +103,8 @@ blockquote {background:lightgray}
 
 /* unvisited link */
 a:link {
-    color: green;
+    color: inherit;
+    text-decoration: none;
 }
 
 /* visited link */
@@ -89,10 +114,20 @@ a:visited {
 
 /* mouse over link */
 a:hover {
-    color: hotpink;
+    color: inherit;
+    text-decoration: underline;
 }
 
 /* selected link */
 a:active {
     color: blue;
+}
+
+.highlighted_link {
+    background:aquamarine;
+}
+
+.copyright {
+    font-size:xx-small;
+    font-style: italic;
 }
