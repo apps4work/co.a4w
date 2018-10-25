@@ -8,6 +8,7 @@
 %>
 <%@page import="com.dotcomfast.base.*" %><%!
     boolean require_login = false;
+    boolean require_email = true;
 
     String clean(String filename) {
         return filename.replace("-", " ");
@@ -29,7 +30,7 @@
     }
 
     String link(String callout, String filename) {
-        return "<a href='" + filename + "' >" + callout + "</a>";
+        return "<a id='" + filename + "'href='" + filename + "' >" + callout + "</a>";
     }
 
     String source(String pageFileName) throws Exception {
@@ -66,9 +67,9 @@
 
                         b.append("</ol>\n");
                         b.append(link(chapter_name(running_chapter_number, running_chapter), line));
-                        b.append("<ol id='" + line + "' >\n");
+                        b.append("<ol  >\n");
                     } else {
-                        b.append("<li id='" + line + "' >\n").append(link(line)).append("</li>\n");
+                        b.append("<li  >\n").append(link(line)).append("</li>\n");
                     }
 
                     if (current.equals(line)) {
@@ -124,7 +125,10 @@
                 if (require_login) {
                     auth = new Authorization(cm, session, request);
                 }
-
+                if (require_email &&  !"localhost".equalsIgnoreCase(request.getServerName())) {
+                    auth = new Authorization.By_Email(cm, session, request);
+                }
+               
                 if (auth == null || auth.authorized()) {
                     String pathInfo = request.getPathInfo();
                     String pageFileName = pathInfo.substring(pathInfo.indexOf("/") + 1); // remove slash
@@ -149,7 +153,7 @@
                         cm.out("</div></td>\n"
                                 + "<td class='page'>\n"
                                 + "<div class='page'>");
-                        cm.out("<span class='chapter_name'>"
+                        String links = ("<span class='chapter_name'>"
                                 + (contents.is_chapter?"":contents.chapter_name)
                                 + "</span>"
                                 + "<span class='editlinks'>"
@@ -158,17 +162,20 @@
                                 + " <a class='editlink' href='" + contents.prev + "' >prev</a>"
                                 + " <a class='editlink' href='" + contents.next + "' >next</a>"
                                 + "</span>"
-                        );
+                        ); 
+                        cm.out(links);
                         cm.out("<h1>" + contents.page_name
                                 + "</h1>\n");
                         Markdown markdown = null;
                         try {
                             markdown = new Markdown(source(pageFileName));
+                            markdown.split();
                             cm.out(markdown.html());
 
                         } catch (Throwable e) {
                             cm.out(cm.exception(e).replace("</table>", ""));
                         }
+                        cm.out(links);
                         cm.out("</div>"
                                 + "</td>"
                                 + "<td class='sidebar'>"
@@ -180,6 +187,7 @@
                         cm.out("<script>\n"
                                 + "    setBookClass('" + pageFileName + "','currentPage');\n "
                                 + "    setBookClass('" + contents.chapter + "','currentChapter');\n "
+                                + "    book_scroll_to('" + contents.chapter + "');\n "
                                 + "  </script>\n");
 
                     }

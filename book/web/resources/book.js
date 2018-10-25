@@ -50,4 +50,14 @@ import * as showdown from './showdown.js';
         $("a").addClass("highlighted_link");
         return false;
     }
+    
+    function book_scroll_to(id) {
+        var element = document.getElementById(id);
+        var top = element.offsetTop;
+        var op = element.offsetParent;
+        var p = element.parentNode;
+        p.scrollTop=(top);
+        var t = p.scrollTop;
+        return t;
+    }
 

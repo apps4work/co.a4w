@@ -101,6 +101,11 @@ blockquote {background:lightgray}
     background:#cafa5e;
 }
 
+.chapter_name {
+    font-style: italic;
+    color: graytext;
+}
+
 /* unvisited link */
 a:link {
     color: inherit;
@@ -130,4 +135,10 @@ a:active {
 .copyright {
     font-size:xx-small;
     font-style: italic;
+}
+
+.sidebar_reference { 
+    background:pink;
+    vertical-align: super;
+    font-size: smaller;
 }

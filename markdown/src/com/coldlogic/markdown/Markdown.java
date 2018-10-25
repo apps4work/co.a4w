@@ -7,6 +7,8 @@ package com.coldlogic.markdown;
  *
  * @author root
  */
+import com.dotcomfast.util.FileUtil;
+import java.util.HashMap;
 import java.util.Set;
 import org.commonmark.node.*;
 import org.commonmark.parser.Parser;
@@ -16,57 +18,69 @@ import org.commonmark.renderer.html.HtmlRenderer;
 public final class Markdown {
 
     static Parser parser = Parser.builder().build();
-   // static HtmlRenderer.Builder rendererB = HtmlRenderer.builder();
-    static HtmlRenderer renderer = HtmlRenderer.builder().build();
+    // static HtmlRenderer.Builder rendererB = HtmlRenderer.builder();
+    static HtmlRenderer html_renderer = HtmlRenderer.builder().build();
+    static LatexRenderer latex_renderer = LatexRenderer.builder().build();
 
-    
     static final String SIDEBAR_LOWER = "sidebar";
     static final String SIDEBAR_UPPER = SIDEBAR_LOWER.toUpperCase();
     static final String COMMENT_LOWER = "comment";
     static final String COMMENT_UPPER = COMMENT_LOWER.toUpperCase();
-    
-    
+
     private final Node document;
     private Node sidebar;
-    
+
     public Markdown(String md) {
         document = parser.parse(md);
-        split();
     }
 
     public static void main(String[] args) throws Exception {
         String md = test; //"# the title";
-        Markdown markdown = new Markdown(md); 
-        System.out.println(markdown.html()
-                + "\n"
-                + markdown.document.toString());
+//        md=testfn;
+md=testCode;
+        //md = FileUtil.getStringFromFile("/s/repo/co.a4w.wiki/_book.md");
+        Markdown markdown = new Markdown(md);
+        //FileUtil.storeInFile(markdown.latex(), "/s/repo/co.a4w.wiki/_book.tex");
+        System.out.println(markdown.latex()
+        //                + "\n"
+        //                + markdown.document.toString()
+        );
 
-       System.out.println("------------------------------------- Document ------------------------------------------------");
-        markdown.document.accept(new PrintVisitor());
-        System.out.println("-------------------------------------SideBar------------------------------------------------");
-        markdown.sidebar.accept(new PrintVisitor());
-        
+//        System.out.println("------------------------------------- Document ------------------------------------------------");
+//        markdown.document.accept(new PrintVisitor());
+//        System.out.println("-------------------------------------SideBar------------------------------------------------");
+//        markdown.sidebar.accept(new PrintVisitor());
+    }
+
+    public static void run(String[] args) throws Exception {
+        String md = FileUtil.getStringFromFile("/s/repo/co.a4w.wiki/_book.md");
+        Markdown markdown = new Markdown(md);
+        FileUtil.storeInFile(markdown.latex(), "/s/repo/co.a4w.wiki/_book.tex");
 
     }
 
-    public String html() throws Exception {        
-        return renderer.render(document);  // "<p>This is <em>Sparta</em></p>\n"
+    public String html() throws Exception {
+        return html_renderer.render(document);  // "<p>This is <em>Sparta</em></p>\n"
     }
-    
-    void split() {
+
+    public void split() {
         sidebar = new Document();
         document.accept(new SplitVisitor());
     }
-    
+
     public String sidebar() {
-         return copyRight + renderer.render(sidebar);
+        return copyRight + html_renderer.render(sidebar);
+    }
+
+    private String latex() {
+        document.accept(new LatexFixerVisitor());
+        return latex_renderer.render(document);
     }
 
     class CommentNode extends BlockQuote {
 
-
     }
-    
+
     static class CommentRender implements NodeRenderer {
 
         @Override
@@ -78,61 +92,176 @@ public final class Markdown {
         public void render(Node node) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
-        
+
     }
-    
+
+    class LatexFixerVisitor extends SplitVisitor {
+
+        @Override
+        String html_of_footnote_reference(Footnote footnote) { // references are in place definitions 
+            return "\\footnote{" + footnote.definition + "}";
+        }
+
+        @Override
+        void process_footnote_definition(Footnote footnote) {
+            if (footnote.htmlBlockOfReference != null) {
+                footnote.htmlBlockOfReference.setLiteral(html_of_footnote_reference(footnote));
+            }
+        }
+
+        @Override
+        String html_of_footnote_definition(Footnote footnote, Text footnote_text) { // move the definition to the in plance reference.
+
+            return "";
+        }
+
+        void process_sidebar(Text text, String literal, Node node) {
+//            text.setLiteral(literal.replace(SIDEBAR_LOWER, "").replace(SIDEBAR_UPPER, ""));
+//            node.unlink();
+//            sidebar.appendChild(node);
+        }
+    }
+
+    class Footnote {
+
+        int number;
+        private String label;
+        private String definition;
+        private HtmlBlock htmlBlockOfReference;
+
+    }
+
     class SplitVisitor extends org.commonmark.node.AbstractVisitor {
-        int depth=0;
+
+        int depth = 0;
+        private int footnote_number = 0;
+        HashMap<String, Footnote> footnotes = new HashMap<>();
+
         @Override
         protected void visitChildren(Node node) {
             Node child = node;
-            if(child!=null && child instanceof org.commonmark.node.BlockQuote) {
-                child=child.getFirstChild();
-                if(child!=null && child instanceof org.commonmark.node.Paragraph) {
-                    child=child.getFirstChild();
-                    if(child!=null && child instanceof org.commonmark.node.Text) {
+            if (child != null) {
+                if (child instanceof org.commonmark.node.BlockQuote) {
+                    child = child.getFirstChild();
+                    if (child != null && child instanceof org.commonmark.node.Paragraph) {
+                        child = child.getFirstChild();
+                        if (child != null && child instanceof org.commonmark.node.Text) {
+                            Text text = (Text) child;
+                            String literal = text.getLiteral();
+
+                            String haystack = literal.trim().toLowerCase();
+                            if (haystack.startsWith(SIDEBAR_LOWER)) {
+                                process_sidebar(text, literal, node);
+                            } else if (haystack.startsWith(COMMENT_LOWER)) {
+                                process_comment(text, literal, node);
+                            }
+                        }
+                    }
+
+                } else {
+                    while (child instanceof org.commonmark.node.Text && ((Text) child).getLiteral().contains(FOOTNOTE_MD_START)) {
                         Text text = (Text) child;
                         String literal = text.getLiteral();
-                        String haystack = literal.trim().toLowerCase();
-                        if(haystack.startsWith(SIDEBAR_LOWER)) {
-                            text.setLiteral(literal.replace(SIDEBAR_LOWER,"").replace(SIDEBAR_UPPER,""));
-                            node.unlink();
-                            sidebar.appendChild(node);                           
-                        } else if(haystack.startsWith(COMMENT_LOWER)) {
-                            text.setLiteral(literal.replace(COMMENT_LOWER,"").replace(COMMENT_UPPER,""));
-                            String html = renderer.render(text);
-                            HtmlBlock h = new HtmlBlock();
-                            h.setLiteral("<span class='comment'>"+html+"</span>");
-                            node.unlink();
-                            sidebar.appendChild(h);                           
+                        int at = literal.indexOf(FOOTNOTE_MD_START);
+                        int end = literal.indexOf("]", at);
+                        if (end != -1) {
+
+                            String label = literal.substring(at + 1, end);
+                            Footnote footnote = footnotes.get(label);
+                            if (footnote == null) {
+                                footnote = new Footnote();
+                                footnote.number = ++footnote_number;
+                                footnotes.put(label, footnote);
+                            }
+                            footnote.label = label;
+
+                            if (end + 1 < literal.length() && literal.charAt(end + 1) == ':') {
+                                //it is a definition. Move to sidebar
+                                text.setLiteral(literal.substring(0, at)); // keep the prior text, if any, remove definition
+
+                                footnote.definition = literal.substring(end + 2);
+
+                                process_footnote_definition(footnote);
+                            } else {
+                                // it is a reference
+                                text.setLiteral(literal.substring(0, at) + literal.substring(end + 1)); // remove the reference from the text
+                                process_footnote_reference(text, footnote);
+
+                            }
                         }
                     }
                 }
-                
             }
-            
-            int m = depth;
-            while(m-->0)
-                System.out.print(margin);
-            
-            System.out.println(depth+":"+node+":"+node.getClass().getCanonicalName());
+
+//            int m = depth;
+//            while (m-- > 0) {
+//                System.out.print(margin);
+//            }
+//
+//            System.out.println(depth + ":" + node + ":" + node.getClass().getCanonicalName());
             depth++;
             super.visitChildren(node);
             depth--;
         }
+        static final String FOOTNOTE_MD_START = "[^";
+
+        String process_footnote_reference(Text text, Footnote footnote) {
+            footnote.htmlBlockOfReference = new HtmlBlock();
+            footnote.htmlBlockOfReference.setLiteral(html_of_footnote_reference(footnote));
+            text.getParent().appendChild(footnote.htmlBlockOfReference);
+            footnote.htmlBlockOfReference.insertBefore(text);
+            return "";
+        }
+
+        String html_of_footnote_reference(Footnote footnote) {
+            return "<span class='sidebar_reference'>" + (footnote.number) + "</span>";
+        }
+
+        void process_footnote_definition(Footnote footnote) {
+            Text footnote_text = new Text();
+            footnote_text.setLiteral(footnote.definition);
+            HtmlBlock h = new HtmlBlock();
+            h.setLiteral(html_of_footnote_definition(footnote, footnote_text));
+            sidebar.appendChild(h);
+        }
+
+        String html_of_footnote_definition(Footnote footnote, Text footnote_text) {
+            return "<div  class='sidebar_reference_definition'>"
+                    + "<span class='sidebar_reference'>" + (footnote.number) + "</span> "
+                    + html_renderer.render(footnote_text)
+                    + "</div>";
+        }
+
+        void process_comment(Text text, String literal, Node node) {
+            text.setLiteral(literal.replace(COMMENT_LOWER, "").replace(COMMENT_UPPER, ""));
+            String html = html_renderer.render(text);
+            HtmlBlock h = new HtmlBlock();
+            h.setLiteral("<span class='comment'>" + html + "</span>");
+            node.unlink();
+        }
+
+        void process_sidebar(Text text, String literal, Node node) {
+            text.setLiteral(literal.replace(SIDEBAR_LOWER, "").replace(SIDEBAR_UPPER, ""));
+            node.unlink();
+            sidebar.appendChild(node);
+        }
 
     }
+
     static class PrintVisitor extends org.commonmark.node.AbstractVisitor {
-        int depth=0;
+
+        int depth = 0;
+
         @Override
         protected void visitChildren(Node node) {
             Node child = node.getFirstChild();
-           
+
             int m = depth;
-            while(m-->0)
+            while (m-- > 0) {
                 System.out.print(margin);
-            
-            System.out.println(depth+":"+node);
+            }
+
+            System.out.println(depth + ":" + node);
             depth++;
             super.visitChildren(node);
             depth--;
@@ -143,6 +272,15 @@ public final class Markdown {
             + "&copy; ColdLogic LLC, PAAT Inc. All rights reserved. Information provided on these pages may describe proprietary property owned/protected by copyright, patents, and pending patents by OnPointManufacturing Inc, PAAT Inc,  ColdLogic LLC, their parents, subsidiaries, principals, and/or owners."
             + "</div>";
     static String margin = "|  ";
+    static String testfn = "We had a problem with automating manufacturing.[^testfn][^testfn]:the footnote Even though we used the best tools in the industry, it was nearly impossible to get them to do the automated manufacturing we wanted. \n"
+            + "We discovered this was not because the tools weren't suitable for their customers' business but that we are in a different business.\n";
+    
+    static String testCode = "A `Part` is an `Object` (in the programming sense) that is normally known about by programmers and manipulated by programs. The `Part interface` is how programs deal with theat `Part` Object content that's in an A4W. Programs do not deal with an A4W directly, other than being the object of `SaveAsA4W` and `OpenA4W`.\n" +
+"\n" +
+"If you are a provider of data then your job is to present data at the `Part Interface`. If you are a consumer of data then your job is to read the data from the `Part Interface` (of a `Part` that you will be given as a parameter).\n" +
+"\n" 
+            + "\n```\nthis is a block of code\n```\n "+
+"![Part Interface](images/PartInterface.png)";
     static String test = "                    # The On-Demand Business\n"
             + "_How Apps For Work revolutionize Physical Product Development_\n"
             + "\n"
@@ -169,7 +307,7 @@ public final class Markdown {
             + "\n"
             + "### [The Problem](Chapter-1-The-Problem)\n"
             + "\n"
-            + "We had a problem with automating manufacturing. Even though we used the best tools in the industry, it was nearly impossible to get them to do the automated manufacturing we wanted. \n"
+            + "We had a problem with automating manufacturing.[^testfn][^testfn]:the footnote Even though we used the best tools in the industry, it was nearly impossible to get them to do the automated manufacturing we wanted. \n"
             + "We discovered this was not because the tools weren't suitable for their customers' business but that we are in a different business.\n"
             + "\n"
             + "We are in the On-Demand Business - high-volume unique products, and not the long run business of high volumes of identical products - and the On-Demand Business demands a degree of automation that isn't necessary or affordable in the long run business. But not only does the on-demand business demand the automation, the automation of manufacturing requires the value that On-Demand Business brings to justify economically the cost the automation.\n"
@@ -243,56 +381,6 @@ public final class Markdown {
             + "\n"
             + "***\n"
             + "![dave and kirby](http://news.blr.com/app/uploads/sites/3/2011/08/Dilbert1.jpg)\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
-            + "\n"
             + "\n"
             + "\n"
             + "\n"
