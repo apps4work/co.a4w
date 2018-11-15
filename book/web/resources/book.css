@@ -84,6 +84,16 @@ blockquote {background:lightgray}
           border: thin white solid;
 }
 
+.editor_note{background:pink; 
+           color:white;
+          display: block;
+          font-size: smaller;
+          border: thin white solid;
+}
+.editor_note::before {
+  content: "Editors note (not for publication):";
+}
+
 .comment::before {
   content: "Authors note (not for publication):";
 }

@@ -1,5 +1,6 @@
 package com.coldlogic.markdown;
 
+import com.coldlogic.markdown.Markdown.Found;
 import com.dotcomfast.net.LinkAccessor;
 import com.dotcomfast.util.FileUtil;
 import java.io.File;
@@ -61,6 +62,13 @@ public class LatexNodeRenderer extends AbstractVisitor implements NodeRenderer {
         latex.line_command("usepackage", "fixltx2e");
         latex.line_command("usepackage", "footnote");
         latex.line_command("usepackage", "listings");
+        latex.line_command("usepackage", "wrapfig");
+        latex.line_command("usepackage", "tcolorbox");
+        latex.raw(
+                "\\newenvironment{WrapText}[1][r]\n"
+                + "  {\\wrapfigure{#1}{0.5\\textwidth}\\tcolorbox}\n"
+                + "  {\\endtcolorbox\\endwrapfigure}");
+
         latex.raw("\\title{The On-Demand Business}\n"
                 + "\\author{Dave Pullin and Kirby Best \\thanks{with help from lots of people}}\n"
                 + "\\date{November 2018}\n"
@@ -74,11 +82,19 @@ public class LatexNodeRenderer extends AbstractVisitor implements NodeRenderer {
                 + "\\end{titlepage}");
         visitChildren(document);
         latex.line();
+//        latex.raw("this is just ordinary text\n"
+//                + "\\begin{WrapText}\n"
+//                + "The is sidebar text\n"
+//                + "\\end{WrapText}");
+
         boolean first = true;
         for (Label label : labels.values()) {
             if (label.defCount == 0) {
                 if (first) {
-                    latex.line_command("chapter", "Undefined Labels");
+                    latex.line_command("chapter", "Not Included in this Version");
+                    latex.text("This is a list of chapters not included in this version of the book.");
+                    latex.text("They may be found at http://apps4work.info/book ");
+
                     first = false;
                 }
                 latex.line_command("paragraph", label.unique);
@@ -124,19 +140,24 @@ public class LatexNodeRenderer extends AbstractVisitor implements NodeRenderer {
 
     @Override
     public void visit(BlockQuote blockQuote) {
-        if(latex.in_quotation) {
+        if (latex.in_quotation) {
             throw new RuntimeException("nested quotes");
         }
+        Found found = Markdown.is_what(blockQuote);
+        String command = found.type.latex;
+        found.fix_text();
+
         latex.line();
-        latex.begin("quotation");
-        latex.in_quotation=true;
+        latex.begin(command);
+        latex.in_quotation = true;
         latex.tag("blockquote", getAttrs(blockQuote, "blockquote"));
         //latex.line_command("section", ""); // redundant to fix bug/error in linux latex processor 
         //latex.line();
+        latex.text(found.type.preamble);
         visitChildren(blockQuote);
         latex.line();
-        latex.end("quotation");//blockquote");
-        latex.in_quotation=false;
+        latex.end(command);//blockquote");
+        latex.in_quotation = false;
         latex.line();
     }
 
@@ -202,7 +223,7 @@ public class LatexNodeRenderer extends AbstractVisitor implements NodeRenderer {
             attrs.put("title", link.getTitle());
         }
         //latex.just_command("protected");
-       
+
         if (isRemote(url)) {
             if (!url.equals(link_text)) {// avoid redundant footnote           
                 latex.open_command("footnote");
@@ -271,9 +292,13 @@ public class LatexNodeRenderer extends AbstractVisitor implements NodeRenderer {
         if (image.getTitle() != null) {
             attrs.put("title", image.getTitle());
         }
+        latex.begin("figure");
+        latex.raw("\\includegraphics[width=\\linewidth]{" + url + ".eps}");
+        String figlabel = label("fig:" + altText, true);
+        latex.raw("\\caption{" + altText + "}\n"
+                + "  \\label{" + figlabel + "}");
         latex.line();
-        latex.raw("\\includegraphics[scale=1,bb=0 0 30 30]{"+url+"}");
-        latex.line();
+        latex.end("figure");
         //latex.tag("img", getAttrs(image, "img", attrs), true);
     }
 
@@ -349,15 +374,15 @@ public class LatexNodeRenderer extends AbstractVisitor implements NodeRenderer {
     }
 
     private void renderListBlock(ListBlock listBlock, String command, Map<String, String> attributes) {
-        
+
         latex.line();
         latex.begin(command);
         latex.tag(command, attributes);
         latex.line();
         boolean nested_in_list = latex.in_list;
-        latex.in_list=true;
+        latex.in_list = true;
         visitChildren(listBlock);
-        latex.in_list=nested_in_list;
+        latex.in_list = nested_in_list;
         latex.line();
         latex.end(command);
         latex.line();
@@ -401,12 +426,12 @@ public class LatexNodeRenderer extends AbstractVisitor implements NodeRenderer {
         if (!filename.contains(".") || filename.lastIndexOf(".") < (filename.length() - 8)) {
             filename += ".jpeg";
         }
-        if (!filename.endsWith(".png") 
-                //&& !filename.endsWith(".jpeg") 
-                //&& !filename.endsWith(".jpg")
-                ) {
-            throw new Exception("Omitted Image\n" + url + "\n");
-        } 
+//        if (!filename.endsWith(".png") 
+//                //&& !filename.endsWith(".jpeg") 
+//                //&& !filename.endsWith(".jpg")
+//                ) {
+//            throw new Exception("Omitted Image\n" + url + "\n");
+//        } 
 
         String localFile = path + filename;
         File f = new File(localFile);

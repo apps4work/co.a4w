@@ -9,10 +9,8 @@ package com.coldlogic.markdown;
  */
 import com.dotcomfast.util.FileUtil;
 import java.util.HashMap;
-import java.util.Set;
 import org.commonmark.node.*;
 import org.commonmark.parser.Parser;
-import org.commonmark.renderer.NodeRenderer;
 import org.commonmark.renderer.html.HtmlRenderer;
 
 public final class Markdown {
@@ -25,7 +23,73 @@ public final class Markdown {
     static final String SIDEBAR_LOWER = "sidebar";
     static final String SIDEBAR_UPPER = SIDEBAR_LOWER.toUpperCase();
     static final String COMMENT_LOWER = "comment";
+    static final String EDITOR_MARKER = "|";
     static final String COMMENT_UPPER = COMMENT_LOWER.toUpperCase();
+    public int book_max_editor_mark_number = 0;
+
+    public enum FoundType {
+        quotation("", "quotation")//
+        , sidebar(SIDEBAR_LOWER, "WrapText")//
+        , comment(COMMENT_LOWER, "WrapText", "Authors comment:")//
+        , editor(EDITOR_MARKER, "WrapText", "Editors note:")//
+        ;
+        public String latex;
+        public String preamble = "";
+        public String marker;
+
+        FoundType(String marker, String latex) {
+            this(marker, latex, "");
+        }
+
+        FoundType(String marker, String latex, String preamble) {
+
+            this.marker = marker;
+            this.latex = latex;
+            this.preamble = preamble;
+        }
+
+    }
+
+    public static class Found {
+
+        FoundType type;
+        Text text;
+        String literal;
+        Node node;
+
+        public void fix_text() {
+            if (text != null && type.marker.length() > 0) {
+                text.setLiteral(literal.replace(type.marker, "").replace(type.marker.toUpperCase(), ""));
+            }
+        }
+    }
+
+    static Found is_what(Node node) {
+        Found found = new Found();
+        found.node = node;
+        found.type = FoundType.quotation;
+
+        Node child = node;
+        if (child != null) {
+            if (child instanceof org.commonmark.node.BlockQuote) {
+                child = child.getFirstChild();
+                if (child != null && child instanceof org.commonmark.node.Paragraph) {
+                    child = child.getFirstChild();
+                    if (child != null && child instanceof org.commonmark.node.Text) {
+                        found.text = (Text) child;
+                        found.literal = found.text.getLiteral();
+                        String haystack = found.literal.trim().toLowerCase();
+                        for (FoundType f : FoundType.values()) {
+                            if (haystack.startsWith(f.marker)) {
+                                found.type = f; //last wins
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return found;
+    }
 
     private final Node document;
     private Node sidebar;
@@ -37,7 +101,7 @@ public final class Markdown {
     public static void main(String[] args) throws Exception {
         String md = test; //"# the title";
 //        md=testfn;
-md=testCode;
+        md = testSidebar;
         //md = FileUtil.getStringFromFile("/s/repo/co.a4w.wiki/_book.md");
         Markdown markdown = new Markdown(md);
         //FileUtil.storeInFile(markdown.latex(), "/s/repo/co.a4w.wiki/_book.tex");
@@ -65,7 +129,9 @@ md=testCode;
 
     public void split() {
         sidebar = new Document();
-        document.accept(new SplitVisitor());
+        HtmlFixerVisitor htmlFixerVisitor = new HtmlFixerVisitor();
+        document.accept(htmlFixerVisitor);
+        book_max_editor_mark_number = htmlFixerVisitor.editor_number;
     }
 
     public String sidebar() {
@@ -77,25 +143,7 @@ md=testCode;
         return latex_renderer.render(document);
     }
 
-    class CommentNode extends BlockQuote {
-
-    }
-
-    static class CommentRender implements NodeRenderer {
-
-        @Override
-        public Set<Class<? extends Node>> getNodeTypes() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void render(Node node) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-    }
-
-    class LatexFixerVisitor extends SplitVisitor {
+    class LatexFixerVisitor extends HtmlFixerVisitor {
 
         @Override
         String html_of_footnote_reference(Footnote footnote) { // references are in place definitions 
@@ -111,14 +159,29 @@ md=testCode;
 
         @Override
         String html_of_footnote_definition(Footnote footnote, Text footnote_text) { // move the definition to the in plance reference.
-
             return "";
         }
 
-        void process_sidebar(Text text, String literal, Node node) {
+        /**
+         *
+         * @param text
+         * @param literal
+         * @param node
+         */
+        @Override
+        void process_sidebar(Found found) {
 //            text.setLiteral(literal.replace(SIDEBAR_LOWER, "").replace(SIDEBAR_UPPER, ""));
 //            node.unlink();
 //            sidebar.appendChild(node);
+        }
+
+        @Override
+        void process_comment(Found found) {
+//            text.setLiteral(literal.replace(COMMENT_LOWER, "").replace(COMMENT_UPPER, ""));
+//            String html = html_renderer.render(text);
+//            HtmlBlock h = new HtmlBlock();
+//            h.setLiteral("<span class='comment'>" + html + "</span>");
+//            node.unlink();
         }
     }
 
@@ -131,31 +194,48 @@ md=testCode;
 
     }
 
-    class SplitVisitor extends org.commonmark.node.AbstractVisitor {
+    class HtmlFixerVisitor extends org.commonmark.node.AbstractVisitor {
 
         int depth = 0;
         private int footnote_number = 0;
+        public int editor_number = 0;
         HashMap<String, Footnote> footnotes = new HashMap<>();
 
         @Override
         protected void visitChildren(Node node) {
+
             Node child = node;
             if (child != null) {
                 if (child instanceof org.commonmark.node.BlockQuote) {
-                    child = child.getFirstChild();
-                    if (child != null && child instanceof org.commonmark.node.Paragraph) {
-                        child = child.getFirstChild();
-                        if (child != null && child instanceof org.commonmark.node.Text) {
-                            Text text = (Text) child;
-                            String literal = text.getLiteral();
+//                    child = child.getFirstChild();
+//                    if (child != null && child instanceof org.commonmark.node.Paragraph) {
+//                        child = child.getFirstChild();
+//                        if (child != null && child instanceof org.commonmark.node.Text) {
+//                            Text text = (Text) child;
+//                            String literal = text.getLiteral();
+//
+//                            String haystack = literal.trim().toLowerCase();
+//                            if (haystack.startsWith(SIDEBAR_LOWER)) {
+//                                process_sidebar(text, literal, node);
+//                            } else if (haystack.startsWith(COMMENT_LOWER)) {
+//                                process_comment(text, literal, node);
+//                            }
+//                        }
+//                    }
+                    Found what = is_what(node);
+                    switch (what.type) {
+                        case comment:
+                            process_comment(what);
+                            break;
+                        case sidebar:
+                            process_sidebar(what);
+                            break;
+                        case quotation:
+                            break;
+                        case editor:
+                            process_editor_note(what);
+                            break;
 
-                            String haystack = literal.trim().toLowerCase();
-                            if (haystack.startsWith(SIDEBAR_LOWER)) {
-                                process_sidebar(text, literal, node);
-                            } else if (haystack.startsWith(COMMENT_LOWER)) {
-                                process_comment(text, literal, node);
-                            }
-                        }
                     }
 
                 } else {
@@ -232,18 +312,35 @@ md=testCode;
                     + "</div>";
         }
 
-        void process_comment(Text text, String literal, Node node) {
-            text.setLiteral(literal.replace(COMMENT_LOWER, "").replace(COMMENT_UPPER, ""));
-            String html = html_renderer.render(text);
+        void process_comment(Found found) {
+            found.text.setLiteral(found.literal.replace(COMMENT_LOWER, "").replace(COMMENT_UPPER, ""));
+            String html = html_renderer.render(found.text);
             HtmlBlock h = new HtmlBlock();
             h.setLiteral("<span class='comment'>" + html + "</span>");
-            node.unlink();
+            Node parent = found.text.getParent();
+            found.text.unlink();
+            parent.appendChild(h);
         }
 
-        void process_sidebar(Text text, String literal, Node node) {
-            text.setLiteral(literal.replace(SIDEBAR_LOWER, "").replace(SIDEBAR_UPPER, ""));
-            node.unlink();
-            sidebar.appendChild(node);
+        void process_editor_note(Found found) {
+            //found.text.setLiteral(found.literal.replace(COMMENT_LOWER, "").replace(COMMENT_UPPER, ""));
+            String html = html_renderer.render(found.text);
+            HtmlBlock h = new HtmlBlock();
+            editor_number++;
+            h.setLiteral("<div class='editor_note' id='EDITOR_NOTE_" + (editor_number) + "'>Editor note: "
+                    + "<button onclick='book_next_editor_mark(" + (editor_number - 1) + ")';> prev </button>"
+                    + "<button onclick='book_next_editor_mark(" + (editor_number) + ")';> next </button>"
+                    + "<div>" + html + "</div>"
+                    + "</div>");
+            Node parent = found.text.getParent();
+            found.text.unlink();
+            parent.appendChild(h);
+        }
+
+        void process_sidebar(Found found) {
+            found.text.setLiteral(found.literal.replace(SIDEBAR_LOWER, "").replace(SIDEBAR_UPPER, ""));
+            found.node.unlink();
+            sidebar.appendChild(found.node);
         }
 
     }
@@ -268,19 +365,26 @@ md=testCode;
         }
 
     }
-    static String copyRight = "<div class='copyright'>"
+    public static String copyRight = "<div class='copyright'>"
             + "&copy; ColdLogic LLC, PAAT Inc. All rights reserved. Information provided on these pages may describe proprietary property owned/protected by copyright, patents, and pending patents by OnPointManufacturing Inc, PAAT Inc,  ColdLogic LLC, their parents, subsidiaries, principals, and/or owners."
             + "</div>";
     static String margin = "|  ";
     static String testfn = "We had a problem with automating manufacturing.[^testfn][^testfn]:the footnote Even though we used the best tools in the industry, it was nearly impossible to get them to do the automated manufacturing we wanted. \n"
             + "We discovered this was not because the tools weren't suitable for their customers' business but that we are in a different business.\n";
-    
-    static String testCode = "A `Part` is an `Object` (in the programming sense) that is normally known about by programmers and manipulated by programs. The `Part interface` is how programs deal with theat `Part` Object content that's in an A4W. Programs do not deal with an A4W directly, other than being the object of `SaveAsA4W` and `OpenA4W`.\n" +
-"\n" +
-"If you are a provider of data then your job is to present data at the `Part Interface`. If you are a consumer of data then your job is to read the data from the `Part Interface` (of a `Part` that you will be given as a parameter).\n" +
-"\n" 
-            + "\n```\nthis is a block of code\n```\n "+
-"![Part Interface](images/PartInterface.png)";
+    static String testSidebar = "" + "\n"
+            + ">sidebar![lets get in a consultant](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvCcOGX5zd3jEq-FSpd-6ZMWZenYJxTzveVKbnCzdnAH-nco3ktw)\n"
+            + "\n\n"
+            + ">comment this is Cxomment stuff"
+            + "\n\n"
+            + ">| ashley said this is dumb"
+            + "\n\n";
+
+    static String testCode = "A `Part` is an `Object` (in the programming sense) that is normally known about by programmers and manipulated by programs. The `Part interface` is how programs deal with theat `Part` Object content that's in an A4W. Programs do not deal with an A4W directly, other than being the object of `SaveAsA4W` and `OpenA4W`.\n"
+            + "\n"
+            + "If you are a provider of data then your job is to present data at the `Part Interface`. If you are a consumer of data then your job is to read the data from the `Part Interface` (of a `Part` that you will be given as a parameter).\n"
+            + "\n"
+            + "\n```\nthis is a block of code\n```\n "
+            + "![Part Interface](images/PartInterface.png)";
     static String test = "                    # The On-Demand Business\n"
             + "_How Apps For Work revolutionize Physical Product Development_\n"
             + "\n"

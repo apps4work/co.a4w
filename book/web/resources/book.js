@@ -36,7 +36,9 @@ import * as showdown from './showdown.js';
     */
    
     
-    function doBookStuff() {
+    /* global book_max_editor_mark_number */
+
+function doBookStuff() {
        var x = (new Showdown.converter()).makeHtml("my markdown stuff");
        alert("my markdown="+x);
     }
@@ -56,6 +58,39 @@ import * as showdown from './showdown.js';
         var top = element.offsetTop;
         var op = element.offsetParent;
         var p = element.parentNode;
+        op.scrollTop=(top);
+        p.scrollTop=(top);
+        var t = p.scrollTop;
+        return t;
+    }
+    
+    function book_next_editor_mark(n) {
+        var max_n = book_max_editor_mark_number;
+        if(n>=max_n) {
+            if (confirm("next n "+n+"/"+max_n+". No more on this page. Go to next page that has editor notes? (takes a few secs to find it)")) {
+                document.location="?editor_mark=next";
+            }
+            
+        } else if(n<1) {
+            if (confirm("next n "+n+"/"+max_n+". No prev on this page. Go to prev page that has editor notes? (takes a few secs to find it)")) {
+                document.location="?editor_mark=prev";
+            }
+            
+        } else {
+           n++;
+           //alert("scroll to "+n+"/"+max_n);
+           book_scroll_edit_to("EDITOR_NOTE_"+n); 
+       }
+    }
+    
+    function book_scroll_edit_to(id) {
+        var element = document.getElementById(id);
+        var page = document.getElementById("page");
+        var top = element.offsetTop;
+        var op = element.offsetParent;
+        var p = element.parentNode;
+        p=page;
+        //op.scrollTop=(top);
         p.scrollTop=(top);
         var t = p.scrollTop;
         return t;
