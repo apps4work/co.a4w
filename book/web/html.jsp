@@ -8,9 +8,6 @@
 //
 %>
 <%@page import="com.dotcomfast.base.*" %><%!
-    boolean require_login = false;
-    boolean require_email = true;
-
     static String clean(String filename) {
         return filename.replace("-", " ");
     }
@@ -143,17 +140,15 @@
 <html>
     <head>
         <title>Book</title>
-        <!-- link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/ -->
+
         <link rel="stylesheet" type="text/css" href="/book/resources/book.css"/>
-        <!-- script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"></script -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src='/book/resources/book.js' ></script>
         <script src='/book/resources/rbt.js' ></script>
 
     </head>
     <body>
-        <%@page extends="com.dotcomfast.base.JSP"               
-                %>
+        <%@page extends="com.dotcomfast.base.JSP"  %>
         <%@page contentType="text/html" pageEncoding="UTF-8"%><%!
 
         %><%
@@ -164,15 +159,7 @@
             try {
                 cm = begin(request, response, out);
                 parm = cm.parameters();
-                Authorization auth = null;
-                if (require_login) {
-                    auth = new Authorization(cm, session, request);
-                }
-                if (require_email && !"localhost".equalsIgnoreCase(request.getServerName())) {
-                    auth = new Authorization.By_Email(cm, session, request);
-                }
-
-                if (auth == null || auth.authorized()) {
+                if (new Authorization.By_Email(cm, session, request).authorized()) {
                     String pathInfo = request.getPathInfo();
                     String pageFileName = pathInfo.substring(pathInfo.indexOf("/") + 1); // remove slash
 
@@ -182,14 +169,20 @@
                         response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
                         response.setHeader("Location", "https://raw.githubusercontent.com/wiki/apps4work/co.a4w/" + pageFileName);
                         return;
-                    } else {
-                        if (parm.has("editor_mark")) {
-                            String nextPage = nextPage(pageFileName,parm.is("prev")); 
-                            response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
-                            response.setHeader("Location", "" + nextPage);
-                            return;
-                        }
+                    } else if (parm.has("editor_mark")) {
+                        String nextPage = nextPage(pageFileName, parm.is("prev"));
+                        response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+                        response.setHeader("Location", "" + nextPage);
+                        return;
+                    } else if (parm.has("edit")) {
 
+                        String editPage = (parm.is("y")
+                                ? "https://github.com/apps4work/co.a4w/wiki/" + pageFileName + "/_edit"
+                                : "/smde?page=" + pageFileName);
+                        response.setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+                        response.setHeader("Location", "" + editPage);
+                        return;
+                    } else {
                         cm.out("<table class='singlepage'>"
                                 + "<tr>"
                                 + "<td class='contents'>"
@@ -207,7 +200,8 @@
                                 + "</span>"
                                 + "<span class='editlinks'>"
                                 + " <a href='#' onclick='book_toggle_links();return false;' >links</a>"
-                                + " <a class='editlink' href='https://github.com/apps4work/co.a4w/wiki/" + pageFileName + "/_edit' target='" + pageFileName + "' >Edit</a>"
+                                + " <a class='editlink' href='" + pageFileName + "?edit=smde' target='" + pageFileName + "' >Smde</a>"
+                                + " <a class='editlink' href='" + pageFileName + "?edit=y' target='" + pageFileName + "' >Edit</a>"
                                 + " <a class='editlink' href='" + contents.prev + "' >prev</a>"
                                 + " <a class='editlink' href='" + contents.next + "' >next</a>"
                                 + "</span>");
